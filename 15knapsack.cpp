@@ -1,73 +1,89 @@
-#include <iostream>
-#include <vector>
-#include <string>
-#include <bitset>
+#include <bits/stdc++.h>
 using namespace std;
 
-long long modInverse(long long t, long long m)
+int modInverse(int a, int m) 
 {
-    for(int i = 1; i < m; i++)
-        if((t * i) % m == 1)
-            return i;
+    a = (a % m + m) % m;
+    for (int x = 1; x < m; x++) {
+        if ((a * x) % m == 1) return x;
+    }
     return -1;
 }
 
-int main()
+vector<int> permute(vector<int> t, vector<int> p) 
 {
-    vector<long long> W = {2,3,7,14,30,57,120,251};
-    long long m = 491, t = 41;
-
-    cout << "Private Key: ";
-    for(auto x : W) cout << x << " ";
-    cout << "\nm = " << m << "\nt = " << t << endl;
-
-    vector<long long> B;
-    cout << "\nPublic Key: ";
-    for(auto x : W)
-    {
-        B.push_back((x * t) % m);
-        cout << B.back() << " ";
+    vector<int> a(t.size());
+    for (int i = 0; i < t.size(); ++i) {
+        a[i] = t[p[i] - 1];
     }
+    return a;
+}
 
-    string msg;
-    cout << "\n\nEnter Message: ";
-    getline(cin, msg);
-
-    vector<long long> cipher;
-
-    cout << "\nEncrypted Values:\n";
-    for(char ch : msg)
-    {
-        bitset<8> bits((unsigned char)ch);
-        long long sum = 0;
-
-        for(int i = 0; i < 8; i++)
-            if(bits[7 - i])
-                sum += B[i];
-
-        cipher.push_back(sum);
-        cout << sum << " ";
+int knapsackSum(vector<int> a, vector<int> x) 
+{
+    int s = 0;
+    for (int i = 0; i < a.size(); ++i) {
+        s += a[i] * x[i];
     }
+    return s;
+}
 
-    long long inv = modInverse(t, m);
-    string plain = "";
-
-    for(long long c : cipher)
-    {
-        long long x = (c * inv) % m;
-        string bits = "00000000";
-
-        for(int i = 7; i >= 0; i--)
-        {
-            if(x >= W[i])
-            {
-                bits[i] = '1';
-                x -= W[i];
-            }
+vector<int> inv_knapsackSum(int s, vector<int> b) 
+{
+    int k = b.size();
+    vector<int> x_prime(k, 0);
+    for (int i = k - 1; i >= 0; --i) {
+        if (s >= b[i]) {
+            x_prime[i] = 1;
+            s -= b[i];
         }
-
-        plain += char(bitset<8>(bits).to_ulong());
     }
+    return x_prime;
+}
 
-    cout << "\n\nDecrypted Message: " << plain << endl;
+int encrypt(vector<int> x, vector<int> a) 
+{
+    return knapsackSum(a, x);
+}
+
+vector<int> decrypt(int s, int n, int r, vector<int> b, vector<int> p) 
+{
+    int r_inv = modInverse(r, n);
+    int s_prime = (s * r_inv) % n;
+    vector<int> x_prime = inv_knapsackSum(s_prime, b);
+    return permute(x_prime, p);
+}
+
+int main() 
+{
+    vector<int> b = {7, 11, 19, 39, 79, 157, 313};
+    int n = 900;
+    int r = 37;
+    vector<int> p = {4, 2, 5, 3, 1, 7, 6};
+    
+    vector<int> t(b.size());
+    for (int i = 0; i < b.size(); ++i) {
+        t[i] = (r * b[i]) % n;
+    }
+    vector<int> a = permute(t, p);
+    
+    cout << "Public Key a = ";
+    for (int val : a) cout << val << " ";
+    cout << endl;
+    
+    vector<int> x = {1, 1, 0, 0, 1, 1, 1}; 
+    cout << "\nPlaintext x = ";
+    for (int val : x) cout << val << " ";
+    cout << " (character 'g')" << endl;
+    
+    int s = encrypt(x, a);
+    cout << "Ciphertext s = " << s << endl;
+    
+    vector<int> plain = decrypt(s, n, r, b, p);
+    
+    cout << "\nDecrypted plaintext x = ";
+    for (int val : plain) cout << val << " ";
+    cout << endl;
+    
+    return 0;
 }
